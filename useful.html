@@ -1,0 +1,181 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+<head>
+    <title>Daniel Halperin - Random useful things for academics</title>
+    <link rel="stylesheet" href="css/dan.css"/>
+</head>
+<body width=600>
+
+<p>Tips for</p>
+<ul>
+    <li><a href="#MATLAB">MATLAB</a></li>
+    <li><a href="#SVN">Subversion (SVN)</a></li>
+    <li><a href="#LATEX">Preparing conference papers with latex/dvips/ps2pdf</a></li>
+    <li><a href="#CAMERA">ACM/IEEE camera ready process</a></li>
+    <li><a href="#OMNIGRAFFLE">OmniGraffle</a></li>
+</ul>
+
+<p>Contact me: <a href="mailto:Daniel Halperin <dhalperi@cs.washington.edu>">dhalperi@cs.washington.edu</a><br></p>
+
+<p>Back to <a href="http://www.cs.washington.edu/homes/dhalperi/">Daniel
+Halperin's</a> webpage.</p>
+
+<a name="MATLAB"></a>
+<H2>MATLAB</H2>
+
+<H4>Computing a CRC-32 in MATLAB<br>
+(a.k.a. CRC32, IEEE 802.3 FCS, IEEE 802.11 FCS, Ethernet FCS, WiFi FCS, 32-bit checksum)</H4>
+
+<p>Unfathomably, this code is hard (impossible?) to find online. (Hence the
+long line of a.k.a.'s above enabling Google to do its job.) There are lots
+of hyper-optimized C/C++/C# implementations using tables, but nothing useful
+for MATLAB. Here you go! (download link: <a href="useful/crc32.m">crc32.m</a>)
+
+<pre>
+function ret = crc32(bits)
+poly = [1 de2bi(hex2dec('EDB88320'), 32)]';
+bits = bits(:);
+
+% Flip first 32 bits
+bits(1:32) = 1 - bits(1:32);
+% Add 32 zeros at the back
+bits = [bits; zeros(32,1)];
+
+% Initialize remainder to 0
+rem = zeros(32,1);
+% Main computation loop for the CRC32
+for i = 1:length(bits)
+    rem = [rem; bits(i)]; %#ok&lt;AGROW&gt;
+    if rem(1) == 1
+        rem = mod(rem + poly, 2);
+    end
+    rem = rem(2:33);
+end
+
+% Flip the remainder before returning it
+ret = 1 - rem;
+end
+</pre>
+
+<H4>Increasing Datatip Precision</H4>
+<p>By default, MATLAB only displays four digits of precision when using the
+Datatip tool in plots. This can be really irritating when you're trying to get
+an exact spot in a large file:</p>
+
+<center> <a href="useful/matlab_4_precision_plot.png"><img src="useful/matlab_4_precision_plot.png" width=400></a> </center>
+
+<p>You can load an alternate datatip file <i>every time you open a plot</i>, or
+you can export the cursor data and then access the coordinates of that point
+inside the object in the command window, but I really wanted another way.</p>
+
+<p>So I found the default datatip file and modified it myself.</p>
+<ul>
+    <li>On Mac OSX: <tt>/Applications/MATLAB_R2008a/toolbox/matlab/graphics/@graphics/@datacursor/default_getDatatipText.m</tt></li>
+    <li>On Linux: <tt>/opt/matlab/toolbox/matlab/graphics/@graphics/@datacursor/default_getDatatipText.m</tt></li>
+</ul>
+
+<p>This file has two lines of text reading:</p>
+<ul>
+    <li><tt>DEFAULT_DIGITS = 4;  % Display 4 digits of x,y position</tt>
+</ul>
+<p>I changed the 4's to 8's.</p>
+
+<center> <a href="useful/matlab_8_precision_plot.png"><img src="useful/matlab_8_precision_plot.png" width=400></a> </center>
+
+<!--- ********************************************************************* -->
+
+<a name="SVN"></a>
+<H2>Subversion</H2>
+<H4>Creating and using patches with SVN</H4>
+<ul>
+    <li><p>How do I create a patch to give back to an upstream maintainer?</p>
+    <p><tt>svn diff --diff-cmd `which diff` -x "-bNaur" &gt; my.patch</tt></p></li>
+
+    <li><p>How do I apply the patch?</p>
+    <p><tt>patch -p0 &lt; my.patch</tt></p></li>
+</ul>
+
+<H4>SVN doesn't recognize my PDF/PS files as binary</H4>
+<p class="indented">For individual files, SVN will treat them as binary files if you mark
+their mime-type as application:</p>
+<p class="indented"><tt>svn propset svn:mime-type application/pdf my.pdf</tt></p>
+
+<p class="indented">Or, you can set options for all files of a certain extension by editing
+<tt>~/.subversion/config</tt>:</p>
+<pre class="indented">
+ [miscellany]
+ enable-auto-props = yes                # enables SVN's automatic labelling
+ [auto-props]
+ *.pdf = svn:mime-type=application/pdf
+ *.ps = svn:mime-type=application/ps
+</pre>
+
+<!--- ********************************************************************* -->
+
+<a name="LATEX"></a>
+<H2>Preparing conference papers with latex/dvips/ps2pdf/pdflatex</H2>
+
+<ul>
+	<li><p>Using the ACM SIG style file, how can I prevent my first bibliography entry from overlapping with the REFERENCES section header?</p>
+	<p>I don't understand why this happens sometimes and not others, but look in the <tt>sig-alternate-10pt.cls</tt> file. In my copy, they redefine the bibliography command:</p>
+<pre>
+\section[References]{%    <=== OPTIONAL ARGUMENT ADDED HERE
+   {References} % was uppercased but this affects pdf bookmarks (SP/GM October 2004)
+   {\vskip -9pt plus 1pt} % GM Nov. 2006 / GM July 2000 (for somewhat tighter spacing)
+    \@mkboth{{\refname}}{{\refname}}%
+}%
+</pre>
+	<p>I found that commenting the <tt>vskip</tt> line above fixes the problem. But don't do this permanently; other times removing this command results in extra whitespace.</p></li>
+</ul>
+
+<!--- ********************************************************************* -->
+
+<a name="CAMERA"></a>
+<H2>ACM/IEEE camera ready process</H2>
+
+<ul>
+    <li><p>How can I tell whether all my fonts are embedded?</p>
+	<p>There is a really useful utility, <tt>pdffonts</tt>, which is part
+	of the <tt>xpdf</tt> package. Install <tt>xpdf</tt> via <tt>fink</tt> or
+	<tt>apt-get</tt> or whatever. Then run <tt>pdffonts &lt;your PDF&gt;</tt>.
+	The "emb" column is the one you're interested in!</p></li>
+
+	<li><p>Not all my fonts are embedded. What do I do?</p>
+	<p>First, try recompiling with the <tt>[draft]</tt> option on your document
+	style in latex, and rerun <tt>pdffonts</tt>. This will help you identify
+	whether the problem is in the main PDF or in an included figure.</p>
+
+	<p>Sometimes you can fix problems in PS or PDF files using <tt>ps2pdf</tt>:</p>
+	<p><tt>ps2pdf -dEmbedAllFonts=true -dPDFSETTINGS=/prepress paper.[ps or pdf] paper_embed.pdf</tt></p></li>
+</ul>
+
+<!--- ********************************************************************* -->
+
+<a name="OMNIGRAFFLE"></a>
+<H2>OmniGraffle</H2>
+<ul>
+		<li><p>How does one make radio emission symbols in OmniGraffle?</p>
+		<p>I used to recommend <a href="http://www.petermcm.dircon.co.uk/index.html">Peter McMaster's</a> script <a href="http://www.petermcm.dircon.co.uk/software/og_arc/index.html">arc_bits</a>. It's surprisingly great.</p>
+
+		<p>However, <a href="http://www.cs.umass.edu/~ransford/">Ben Ransford</a> has revolutionized this process by
+		adding a loop around the arc_bits script. This, and some other useful scripts we developed, are now available
+		via our <a href="https://github.com/ransford/og-cs"><tt>og-cs</tt> GitHub project</a>.</p></li>
+
+		<li><p>How does one make a sine wave or sinc pulse in OmniGraffle?</p>
+		<p>Check out our above referenced <a href="https://github.com/ransford/og-cs"><tt>og-cs</tt> GitHub project</a>.</p></li>
+</ul>
+
+<!--- ********************************************************************* -->
+    <script type="text/javascript">
+        var gaJsHost = (("https:" == document.location.protocol) ?
+        "https://ssl." : "http://www.");
+        document.write(unescape("%3Cscript src='" + gaJsHost +
+        "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    <script type="text/javascript">
+        var pageTracker = _gat._getTracker("UA-3907502-1");
+        pageTracker._initData();
+        pageTracker._trackPageview();
+    </script>
+</body>
+</html>

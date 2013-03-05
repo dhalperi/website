@@ -1,0 +1,40 @@
+a {
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+a:visited{
+    color: blue;
+}
+
+a img {
+    border: none;
+}
+
+body {
+    width: 780px;
+}
+
+h1 {
+    font: 28px Helvetica, sans-serif;
+}
+
+h2 {
+    font: 24px Helvetica, sans-serif;
+    border-bottom: 1px solid #000000;
+}
+
+h3 {
+    font: 20px Helvetica, sans-serif;
+}
+
+h4 {
+    font: 16px Helvetica, sans-serif;
+}
+
+.indented {
+    padding-left: 2em;
+}
