@@ -25,6 +25,8 @@ body {
 
 h1 {
 	font: 28px Helvetica, sans-serif;
+	margin-bottom: 4px;
+	margin-top: 16px;
 }
 
 h2 {
